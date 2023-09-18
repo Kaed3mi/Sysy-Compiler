@@ -16,7 +16,7 @@ public class TokenList {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        tokenList.stream().filter((token) -> !token.toString().startsWith("COMMENT")).forEach((token) -> sb.append(token).append('\n'));
+        tokenList.stream().filter(token -> !token.toString().startsWith("COMMENT")).forEach(token -> sb.append(token).append('\n'));
         return sb.toString();
     }
 }
