@@ -1,7 +1,6 @@
 package frontend.lexical;
 
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Lexer {
     public static int curLine = 1;
@@ -15,11 +14,10 @@ public class Lexer {
                 Matcher matcher = lexeme.getPattern().matcher(currentSourceCode);
                 if (matcher.lookingAt()) {
                     String content = matcher.group("content");
+                    curLine = sourceCode.split("\n").length - currentSourceCode.split("\n").length + 1;
                     tokenList.append(new Token(lexeme, content, curLine));
 
-                    currentSourceCode = currentSourceCode.substring(content.length());
-                    curLine += leadingNewLineCharNum(currentSourceCode);
-                    currentSourceCode = currentSourceCode.trim();
+                    currentSourceCode = currentSourceCode.substring(content.length()).trim();
                     legalLexeme = true;
                     break;
                 }
@@ -31,17 +29,4 @@ public class Lexer {
         return tokenList;
     }
 
-    /**
-     * @return 字符串开头空白字符串中换行符的数目
-     */
-    public static int leadingNewLineCharNum(String string) {
-        String regex = "(?<content>[(\\s)]*)";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(string);
-        if (matcher.lookingAt()) {
-            String str = matcher.group("content");
-            return str.length() - str.replaceAll("\n", "").length();
-        }
-        return 0;
-    }
 }

@@ -18,6 +18,10 @@ public class Token {
         return lineNum;
     }
 
+    public boolean isComment() {
+        return lexeme.equals(Lexeme.COMMENT_BLOCK) || lexeme.equals(Lexeme.COMMENT_SINGLE_LINE);
+    }
+
     @Override
     public String toString() {
         return String.format("%s %s", lexeme, content);
