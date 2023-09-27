@@ -3,9 +3,16 @@ package frontend.lexical;
 import java.util.regex.Matcher;
 
 public class Lexer {
-    public static int curLine = 1;
 
-    public static TokenList lex(String sourceCode) throws Exception {
+    private final String sourceCode;
+    private int curLine;
+
+    public Lexer(String sourceCode) {
+        this.sourceCode = sourceCode;
+        this.curLine = 1;
+    }
+
+    public TokenList lex() throws Exception {
         TokenList tokenList = new TokenList();
         String currentSourceCode = sourceCode;
         while (!currentSourceCode.isEmpty()) {

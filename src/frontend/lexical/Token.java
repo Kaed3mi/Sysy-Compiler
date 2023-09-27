@@ -1,5 +1,7 @@
 package frontend.lexical;
 
+import exceptions.SyntaxException;
+
 public class Token {
     private final Lexeme lexeme;
     private final String content;
@@ -11,11 +13,38 @@ public class Token {
         this.lineNum = lineNum;
     }
 
+    public Lexeme getLexeme() {
+        return lexeme;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
     /**
      * @return Token所在的源代码行数
      */
     public int getLineNum() {
         return lineNum;
+    }
+
+    /**
+     * @param lexeme  确保的Lexeme类型
+     * @param message 异常输出
+     */
+    public void assertLexeme(Lexeme lexeme, String message) throws Exception {
+        if (!this.lexeme.equals(lexeme)) {
+            throw new SyntaxException(message);
+        }
+    }
+
+    /**
+     * @param lexeme 确保的Lexeme类型
+     */
+    public void assertLexeme(Lexeme lexeme) throws Exception {
+        if (!this.lexeme.equals(lexeme)) {
+            throw new SyntaxException();
+        }
     }
 
     public boolean isComment() {

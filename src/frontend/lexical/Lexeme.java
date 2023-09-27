@@ -55,6 +55,15 @@ public enum Lexeme {
         }
     }
 
+    public boolean isOf(Lexeme... lexemes) {
+        for (Lexeme lexeme : lexemes) {
+            if (this.equals(lexeme)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return name();
