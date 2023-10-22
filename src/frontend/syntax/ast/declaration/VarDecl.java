@@ -13,4 +13,12 @@ public class VarDecl implements Decl {
         this.bType = bType;
         this.varDefList = varDefList;
     }
+
+    public BType getbType() {
+        return bType;
+    }
+
+    public ArrayList<VarDef> getVarDefList() {
+        return varDefList;
+    }
 }

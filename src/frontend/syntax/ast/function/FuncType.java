@@ -1,11 +1,10 @@
 package frontend.syntax.ast.function;
 
-import exceptions.SyntaxException;
 import frontend.lexical.Token;
 
 public class FuncType {
 
-    private enum DefType {
+    public enum DefType {
         INT, VOID;
     }
 
@@ -15,11 +14,11 @@ public class FuncType {
         defType = switch (token.getLexeme()) {
             case INTTK -> DefType.INT;
             case VOIDTK -> DefType.VOID;
-            default -> throw new SyntaxException("函数声明缺少返回值");
+            default -> throw new Exception("函数声明缺少返回值");
         };
     }
 
-    public boolean returnInt() {
+    public boolean returnsInt() {
         return defType.equals(DefType.INT);
     }
 }

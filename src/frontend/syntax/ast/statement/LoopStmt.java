@@ -26,4 +26,24 @@ public class LoopStmt implements Stmt {
         this.bodyStmt = bodyStmt;
         this.isForLoop = false;
     }
+
+    public boolean isForLoop() {
+        return isForLoop;
+    }
+
+    public ForStmt getInitStmt() {
+        return initStmt;
+    }
+
+    public Cond getCond() {
+        return cond;
+    }
+
+    public ForStmt getContinueStmt() {
+        return continueStmt;
+    }
+
+    public Stmt getBodyStmt() {
+        return bodyStmt;
+    }
 }

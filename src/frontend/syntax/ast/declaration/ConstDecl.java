@@ -13,4 +13,11 @@ public class ConstDecl implements Decl {
         this.constDefList = constDefList;
     }
 
+    public BType getbType() {
+        return bType;
+    }
+
+    public ArrayList<ConstDef> getConstDefList() {
+        return constDefList;
+    }
 }

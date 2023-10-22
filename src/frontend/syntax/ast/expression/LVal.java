@@ -1,13 +1,30 @@
 package frontend.syntax.ast.expression;
 
+import frontend.lexical.Ident;
+
 import java.util.ArrayList;
 
 public class LVal implements PrimaryExp {
-    public String ident;
-    public ArrayList<Exp> arrayDim;
+    private Ident ident;
+    private ArrayList<Exp> arrayDim;
 
-    public LVal(String ident, ArrayList<Exp> arrayDim) {
+    private int lineNum;
+
+    public LVal(Ident ident, ArrayList<Exp> arrayDim, int lineNum) {
         this.ident = ident;
         this.arrayDim = arrayDim;
+        this.lineNum = lineNum;
+    }
+
+    public Ident getIdent() {
+        return ident;
+    }
+
+    public ArrayList<Exp> getArrayDim() {
+        return arrayDim;
+    }
+
+    public int getLineNum() {
+        return lineNum;
     }
 }

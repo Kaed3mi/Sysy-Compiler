@@ -13,4 +13,7 @@ public class FuncFParams {
         this.funcFParams = funcFParams;
     }
 
+    public ArrayList<FuncFParam> getFuncFParams() {
+        return funcFParams;
+    }
 }

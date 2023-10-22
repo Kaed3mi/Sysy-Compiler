@@ -10,4 +10,8 @@ public class FuncRParams {
     public FuncRParams(ArrayList<Exp> exps) {
         this.exps = exps;
     }
+
+    public ArrayList<Exp> getExps() {
+        return exps;
+    }
 }

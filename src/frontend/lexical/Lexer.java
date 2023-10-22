@@ -1,6 +1,11 @@
 package frontend.lexical;
 
+import exceptions.CompileError;
+import exceptions.ErrorBuilder;
+import exceptions.ErrorType;
+
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Lexer {
 
@@ -14,7 +19,7 @@ public class Lexer {
 
     public TokenList lex() throws Exception {
         TokenList tokenList = new TokenList();
-        String currentSourceCode = sourceCode;
+        String currentSourceCode = sourceCode.trim();
         while (!currentSourceCode.isEmpty()) {
             boolean legalLexeme = false;
             for (Lexeme lexeme : Lexeme.values()) {
@@ -30,7 +35,19 @@ public class Lexer {
                 }
             }
             if (!legalLexeme) {
-                throw new Exception('\n' + tokenList.toString());
+                // 格式字符串中出现非法字符
+                Pattern pattern = Pattern.compile("(?<content>" + "\"(.*?)\"" + ")");
+                Matcher matcher = pattern.matcher(currentSourceCode);
+                if (matcher.lookingAt()) {
+                    curLine = sourceCode.split("\n").length - currentSourceCode.split("\n").length + 1;
+                    String content = matcher.group("content");
+                    tokenList.append(new Token(Lexeme.STRCON, content, curLine));
+                    currentSourceCode = currentSourceCode.substring(content.length()).trim();
+                    ErrorBuilder.appendError(new CompileError(curLine, ErrorType.ILLEGAL_CHAR, "格式字符串中出现非法字符: " + content));
+                } else {
+                    // 你怎么什么都匹配不上
+                    throw new Exception("Lexer: 你怎么什么都匹配不上" + sourceCode);
+                }
             }
         }
         return tokenList;

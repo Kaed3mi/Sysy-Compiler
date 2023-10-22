@@ -13,4 +13,16 @@ public class IfStmt implements Stmt {
         this.thenStmt = thenStmt;
         this.elseStmt = elseStmt;
     }
+
+    public Cond getCond() {
+        return cond;
+    }
+
+    public Stmt getThenStmt() {
+        return thenStmt;
+    }
+
+    public Stmt getElseStmt() {
+        return elseStmt;
+    }
 }

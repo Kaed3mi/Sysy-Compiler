@@ -1,10 +1,6 @@
 package frontend.syntax;
 
-import exceptions.SyntaxException;
-import frontend.lexical.BinaryOperate;
-import frontend.lexical.Lexeme;
-import frontend.lexical.Token;
-import frontend.lexical.TokenList;
+import frontend.lexical.*;
 import frontend.syntax.ast.Ast;
 import frontend.syntax.ast.BType;
 import frontend.syntax.ast.declaration.*;
@@ -65,15 +61,15 @@ public class Parser {
      * ConstDecl ::= 'const' BType ConstDef { ',' ConstDef } ';'
      */
     private ConstDecl parseConstDecl() throws Exception {
-        tokenList.nextToken().assertLexeme(Lexeme.CONSTTK, "Parser-ConstDecl: const");
+        tokenList.skip(); // skip "const"
         BType bType = parseBType();
         ArrayList<ConstDef> constDefList = new ArrayList<>();
         constDefList.add(parseConstDef());
         while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-            tokenList.skip();
+            tokenList.skip(); //skip ','
             constDefList.add(parseConstDef());
         }
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ConstDecl: ;");
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ConstDecl: ;");
         ConstDecl ret = new ConstDecl(bType, constDefList);
         SyntaxOutputBuilder.appendLine("<ConstDecl>");
         return ret;
@@ -82,7 +78,7 @@ public class Parser {
     /**
      * BType ::= int
      */
-    private BType parseBType() throws SyntaxException {
+    private BType parseBType() throws Exception {
         BType ret = new BType(tokenList.nextToken());
         SyntaxOutputBuilder.appendLine("<BType>");
         return ret;
@@ -92,14 +88,14 @@ public class Parser {
      * ConstDef ::= Ident { '[' ConstExp ']' } '=' ConstInitVal
      */
     private ConstDef parseConstDef() throws Exception {
-        String ident = parseIdent();
+        Ident ident = parseIdent();
         ArrayList<ConstExp> arrayDim = new ArrayList<>();
         while (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '['
             arrayDim.add(parseConstExp());
-            tokenList.nextToken().assertLexeme(Lexeme.RBRACK, "Parser-ConstDef: ]");
+            tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-ConstDef: ]");
         }
-        tokenList.nextToken().assertLexeme(Lexeme.ASSIGN, "Parser-ConstDef: =");
+        tokenList.assertLexemeAndSkip(Lexeme.ASSIGN, "Parser-ConstDef: =");
         ConstInitVal constInitVal = parseConstInitVal();
         ConstDef ret = new ConstDef(ident, arrayDim, constInitVal);
         SyntaxOutputBuilder.appendLine("<ConstDef>");
@@ -129,10 +125,10 @@ public class Parser {
         ArrayList<VarDef> varDefList = new ArrayList<>();
         varDefList.add(parseVarDef());
         while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-            tokenList.skip();
+            tokenList.skip(); // skip ','
             varDefList.add(parseVarDef());
         }
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-VarDecl: ;");
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-VarDecl: ;");
         VarDecl ret = new VarDecl(bType, varDefList);
         SyntaxOutputBuilder.appendLine("<VarDecl>");
         return ret;
@@ -142,18 +138,17 @@ public class Parser {
      * 包含普通变量、一维数组、二维数组定义
      * VarDef ::= Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal
      */
-
     private VarDef parseVarDef() throws Exception {
-        String ident = parseIdent();
+        Ident ident = parseIdent();
         ArrayList<ConstExp> arrayDim = new ArrayList<>();
         while (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '['
             arrayDim.add(parseConstExp());
-            tokenList.nextToken().assertLexeme(Lexeme.RBRACK, "VarDef: ]");
+            tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "VarDef: ]");
         }
         InitVal initVal = null;
         if (tokenList.lookingAtIsOf(Lexeme.ASSIGN)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '='
             initVal = parseInitVal();
         }
         VarDef ret = new VarDef(ident, arrayDim, initVal);
@@ -181,10 +176,10 @@ public class Parser {
      */
     private FuncDef parseFuncDef() throws Exception {
         FuncType funcType = parseFuncType();
-        String ident = parseIdent();
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-FuncDef (");
-        FuncFParams funcFParams = tokenList.lookingAtIsOf(Lexeme.RPARENT) ? null : parseFuncFParams();
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-FuncDef )");
+        Ident ident = parseIdent();
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-FuncDef (");
+        FuncFParams funcFParams = tokenList.lookingAtIsOf(Lexeme.INTTK) ? parseFuncFParams() : null;
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-FuncDef )");
         Block block = parseBlock();
         FuncDef ret = new FuncDef(funcType, ident, funcFParams, block);
         SyntaxOutputBuilder.appendLine("<FuncDef>");
@@ -196,14 +191,10 @@ public class Parser {
      */
     private FuncDef parseMainFuncDef() throws Exception {
         FuncType funcType = new FuncType(tokenList.nextToken());
-        String ident = parseIdent();
-        if (!tokenList.nextToken().getLexeme().equals(Lexeme.LPARENT)) {
-            throw new SyntaxException("Parser-MainFuncDef: (");
-        }
-        FuncFParams funcFParams = tokenList.lookingAtIsOf(Lexeme.RPARENT) ? null : parseFuncFParams();
-        if (!tokenList.nextToken().getLexeme().equals(Lexeme.RPARENT)) {
-            throw new SyntaxException("Parser-MainFuncDef: )");
-        }
+        Ident ident = parseIdent();
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-MainFuncDef: (");
+        FuncFParams funcFParams = null;
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-MainFuncDef: )");
         Block block = parseBlock();
         FuncDef ret = new FuncDef(funcType, ident, funcFParams, block);
         SyntaxOutputBuilder.appendLine("<MainFuncDef>");
@@ -226,7 +217,7 @@ public class Parser {
         ArrayList<FuncFParam> funcFParams = new ArrayList<>();
         funcFParams.add(parseFuncFParam());
         while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-            tokenList.skip();
+            tokenList.skip(); // skip ','
             funcFParams.add(parseFuncFParam());
         }
         FuncFParams ret = new FuncFParams(funcFParams);
@@ -239,16 +230,16 @@ public class Parser {
      */
     private FuncFParam parseFuncFParam() throws Exception {
         BType bType = parseBType();
-        String ident = tokenList.nextToken().getContent();
+        Ident ident = parseIdent();
         ArrayList<ConstExp> arrayDim = new ArrayList<>();
         if (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '['
             arrayDim.add(null); // 当为一位数组时，有一个null占位
-            tokenList.nextToken().assertLexeme(Lexeme.RBRACK, "Parser-FuncFParam ]");
+            tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-FuncFParam ]");
             while (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
-                tokenList.skip();
+                tokenList.skip(); // skip '['
                 arrayDim.add(parseConstExp());
-                tokenList.nextToken().assertLexeme(Lexeme.RBRACK, "Parser-FuncFParam ]");
+                tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-FuncFParam ]");
             }
         }
         FuncFParam ret = new FuncFParam(bType, ident, arrayDim);
@@ -260,13 +251,14 @@ public class Parser {
      * 语句块 Block ::= '{' { BlockItem } '}'
      */
     private Block parseBlock() throws Exception {
-        tokenList.nextToken().assertLexeme(Lexeme.LBRACE, "Parser-Block: {");
+        tokenList.skip(); // skip "{"
         ArrayList<BlockItem> blockItems = new ArrayList<>();
         while (!tokenList.lookingAtIsOf(Lexeme.RBRACE)) {
             blockItems.add(parseBlockItem());
         }
-        tokenList.nextToken().assertLexeme(Lexeme.RBRACE, "Parser-Block: {");
-        Block ret = new Block(blockItems);
+        int rbraceLineNum = tokenList.lookingAt().getLineNum();
+        tokenList.assertLexemeAndSkip(Lexeme.RBRACE, "Parser-Block: }");
+        Block ret = new Block(blockItems, rbraceLineNum);
         SyntaxOutputBuilder.appendLine("<Block>");
         return ret;
     }
@@ -319,24 +311,24 @@ public class Parser {
                 return ret;
             }
             case BREAKTK -> {
-                tokenList.nextToken().assertLexeme(Lexeme.BREAKTK, "Parser-BreakStmt: break");
-                tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-BreakStmt: ;");
-                ret = new BreakStmt();
+                int lineNum = tokenList.nextToken().getLineNum(); // skip "break"
+                tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-BreakStmt: ;");
+                ret = new BreakStmt(lineNum);
                 SyntaxOutputBuilder.appendLine("<Stmt>");
                 return ret;
             }
             case CONTINUETK -> {
-                tokenList.nextToken().assertLexeme(Lexeme.CONTINUETK, "Parser-ContinueStmt: continue");
-                tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ContinueStmt: ;");
-                ret = new ContinueStmt();
+                int lineNum = tokenList.nextToken().getLineNum(); // skip "continue"
+                tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ContinueStmt: ;");
+                ret = new ContinueStmt(lineNum);
                 SyntaxOutputBuilder.appendLine("<Stmt>");
                 return ret;
             }
             case RETURNTK -> {
-                tokenList.nextToken().assertLexeme(Lexeme.RETURNTK, "Parser-ReturnStmt: return");
-                Exp returnExp = tokenList.lookingAtIsOf(Lexeme.SEMICN) ? null : parseExp();
-                tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ReturnStmt: ;");
-                ret = new Return(returnExp);
+                int lineNum = tokenList.nextToken().getLineNum(); // skip "return"
+                Exp returnExp = tokenList.lookingAtExp() ? parseExp() : null;
+                tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ReturnStmt: ;");
+                ret = new ReturnStmt(returnExp, lineNum);
                 SyntaxOutputBuilder.appendLine("<Stmt>");
                 return ret;
             }
@@ -353,22 +345,22 @@ public class Parser {
                     return ret;
                 }
                 ret = parseExpStmt();
-                tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ExpStmt: ;");
+                tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ExpStmt: ;");
                 SyntaxOutputBuilder.appendLine("<Stmt>");
                 return ret;
             }
             case SEMICN -> {
-                tokenList.skip();
+                tokenList.skip(); // skip ';'
                 ret = new ExpStmt(null);
                 SyntaxOutputBuilder.appendLine("<Stmt>");
                 return ret;
             }
             default -> {
-//                Exp exp = parseExp();
-//                ret = new ExpStmt(exp);
-//                SyntaxOutputBuilder.appendLine("<Stmt>");
-//                return ret;
-                throw new SyntaxException("Parser-Stmt: 怎么没有你的事儿");
+                // [Exp] ';'  这里的<Stmt>实际上应该让SEMICN输出
+                Exp exp = parseExp();
+                ret = new ExpStmt(exp);
+                // SyntaxOutputBuilder.appendLine("<Stmt>");
+                return ret;
             }
         }
     }
@@ -378,7 +370,7 @@ public class Parser {
      */
     private ForStmt parseForStmt() throws Exception {
         LVal lVal = parseLVal();
-        tokenList.nextToken().assertLexeme(Lexeme.ASSIGN, "Parser-ForStmt: =");
+        tokenList.assertLexemeAndSkip(Lexeme.ASSIGN, "Parser-ForStmt: =");
         Exp exp = parseExp();
         ForStmt ret = new ForStmt(lVal, exp);
         SyntaxOutputBuilder.appendLine("<ForStmt>");
@@ -409,14 +401,15 @@ public class Parser {
      * 左值表达式 LVal → Ident {'[' Exp ']'}
      */
     private LVal parseLVal() throws Exception {
-        String ident = parseIdent();
+        int lineNum = tokenList.lookingAt().getLineNum();
+        Ident ident = parseIdent();
         ArrayList<Exp> arrayDim = new ArrayList<>();
         while (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '['
             arrayDim.add(parseExp());
-            tokenList.nextToken().assertLexeme(Lexeme.RBRACK, "Parser-LVal ]");
+            tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-LVal ]");
         }
-        LVal ret = new LVal(ident, arrayDim);
+        LVal ret = new LVal(ident, arrayDim, lineNum);
         SyntaxOutputBuilder.appendLine("<LVal>");
         return ret;
     }
@@ -438,7 +431,7 @@ public class Parser {
         ArrayList<Exp> exps = new ArrayList<>();
         exps.add(parseExp());
         while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-            tokenList.skip();
+            tokenList.skip(); // skip ','
             exps.add(parseExp());
         }
         FuncRParams ret = new FuncRParams(exps);
@@ -516,9 +509,9 @@ public class Parser {
     private PrimaryExp parsePrimaryExp() throws Exception {
         Lexeme lookingAt = tokenList.lookingAt().getLexeme();
         if (lookingAt.isOf(Lexeme.LPARENT)) {
-            tokenList.skip();
+            tokenList.skip(); // skip '('
             Exp exp = parseExp();
-            tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-PrimaryExp: )");
+            tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-PrimaryExp: )");
             SyntaxOutputBuilder.appendLine("<PrimaryExp>");
             return exp;
         } else if (lookingAt.isOf(Lexeme.INTCON)) {
@@ -540,10 +533,10 @@ public class Parser {
      * <额外语法>
      */
     private FuncCall parseFuncCall() throws Exception {
-        String ident = parseIdent();
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-FuncCall: (");
-        FuncRParams funcRParams = tokenList.lookingAtIsOf(Lexeme.RPARENT) ? null : parseFuncRParams();
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-FuncCall: )");
+        Ident ident = parseIdent();
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-FuncCall: (");
+        FuncRParams funcRParams = tokenList.lookingAtExp() ? parseFuncRParams() : null;
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-FuncCall: )");
         return new FuncCall(ident, funcRParams);
     }
 
@@ -553,14 +546,14 @@ public class Parser {
      * Stmt ::= 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
      */
     private IfStmt parseIfStmt() throws Exception {
-        tokenList.nextToken().assertLexeme(Lexeme.IFTK, "Parser-IfStmt: if");
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-IfStmt: (");
+        tokenList.skip(); // skip "if"
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-IfStmt: (");
         Cond cond = parseCond();
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-IfStmt: (");
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-IfStmt: (");
         Stmt thenStmt = parseStmt();
         Stmt elseStmt = null;
         if (tokenList.lookingAtIsOf(Lexeme.ELSETK)) {
-            tokenList.skip();
+            tokenList.skip(); // skip "else"
             elseStmt = parseStmt();
         }
         return new IfStmt(cond, thenStmt, elseStmt);
@@ -573,19 +566,19 @@ public class Parser {
      */
     private LoopStmt parseLoopStmt() throws Exception {
         if (tokenList.lookingAtIsOf(Lexeme.WHILETK)) {
-            tokenList.skip();
-            Cond cond = tokenList.lookingAtIsOf(Lexeme.SEMICN) ? null : parseCond();
-            tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-WhileStmt: second ;");
+            tokenList.skip(); // skip "while"
+            Cond cond = tokenList.lookingAtExp() ? parseCond() : null;
+            tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-WhileStmt: second ;");
             return new LoopStmt(cond, parseStmt());
         }
-        tokenList.nextToken().assertLexeme(Lexeme.FORTK, "Parser-ForStmt: for or while");
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-ForStmt: (");
-        ForStmt initStmt = tokenList.lookingAtIsOf(Lexeme.SEMICN) ? null : parseForStmt();
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ForStmt: first ;");
-        Cond cond = tokenList.lookingAtIsOf(Lexeme.SEMICN) ? null : parseCond();
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-ForStmt: second ;");
-        ForStmt continueStmt = tokenList.lookingAtIsOf(Lexeme.RPARENT) ? null : parseForStmt();
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-ForStmt: )");
+        tokenList.assertLexemeAndSkip(Lexeme.FORTK, "Parser-ForStmt: for or while");
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-ForStmt: (");
+        ForStmt initStmt = tokenList.lookingAtExp() ? parseForStmt() : null;
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ForStmt: first ;");
+        Cond cond = tokenList.lookingAtExp() ? parseCond() : null;
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-ForStmt: second ;");
+        ForStmt continueStmt = tokenList.lookingAtExp() ? parseForStmt() : null;
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-ForStmt: )");
         Stmt body = parseStmt();
         return new LoopStmt(initStmt, cond, continueStmt, body);
     }
@@ -596,9 +589,9 @@ public class Parser {
      */
     private AssignStmt parseAssignStmt() throws Exception {
         LVal lVal = parseLVal();
-        tokenList.nextToken().assertLexeme(Lexeme.ASSIGN, "Parser-AssignStmt: =");
+        tokenList.assertLexemeAndSkip(Lexeme.ASSIGN, "Parser-AssignStmt: =");
         Exp exp = tokenList.lookingAtIsOf(Lexeme.GETINTTK) ? parseGetIntStmt() : parseExp();
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-AssignStmt: ;");
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-AssignStmt: ;");
         return new AssignStmt(lVal, exp);
     }
 
@@ -607,9 +600,9 @@ public class Parser {
      * 真的是太丑陋了，实际上getint()和printf()应该归为expression比较合适
      */
     private GetIntStmt parseGetIntStmt() throws Exception {
-        tokenList.nextToken().assertLexeme(Lexeme.GETINTTK, "Parser-GetIntStmt: getint");
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-GetIntStmt: (");
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-GetIntStmt: )");
+        tokenList.assertLexemeAndSkip(Lexeme.GETINTTK, "Parser-GetIntStmt: getint");
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-GetIntStmt: (");
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-GetIntStmt: )");
         return new GetIntStmt();
     }
 
@@ -618,19 +611,20 @@ public class Parser {
      * 'printf' '(' FormatString {',' Exp } ')' ';'    1.有Exp 2.无Exp
      */
     private PrintfStmt parsePrintfStmt() throws Exception {
-        tokenList.nextToken().assertLexeme(Lexeme.PRINTFTK, "Parser-PrintfStmt: printf");
-        tokenList.nextToken().assertLexeme(Lexeme.LPARENT, "Parser-PrintfStmt: (");
+        int lineNum = tokenList.lookingAt().getLineNum();
+        tokenList.assertLexemeAndSkip(Lexeme.PRINTFTK, "Parser-PrintfStmt: printf");
+        tokenList.assertLexemeAndSkip(Lexeme.LPARENT, "Parser-PrintfStmt: (");
         FormatString formatString = parseFormatString();
         ArrayList<Exp> arguments = new ArrayList<>();
         if (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
             while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-                tokenList.nextToken().assertLexeme(Lexeme.COMMA, "Parser-PrintfStmt: ,");
+                tokenList.assertLexemeAndSkip(Lexeme.COMMA, "Parser-PrintfStmt: ,");
                 arguments.add(parseExp());
             }
         }
-        tokenList.nextToken().assertLexeme(Lexeme.RPARENT, "Parser-PrintfStmt: )");
-        tokenList.nextToken().assertLexeme(Lexeme.SEMICN, "Parser-PrintfStmt: ;");
-        return new PrintfStmt(formatString, arguments);
+        tokenList.assertLexemeAndSkip(Lexeme.RPARENT, "Parser-PrintfStmt: )");
+        tokenList.assertLexemeAndSkip(Lexeme.SEMICN, "Parser-PrintfStmt: ;");
+        return new PrintfStmt(formatString, arguments, lineNum);
     }
 
     /**
@@ -647,7 +641,7 @@ public class Parser {
      * FormatString ::= String
      */
     private FormatString parseFormatString() throws Exception {
-        tokenList.lookingAt().assertLexeme(Lexeme.STRCON, "Parser-FormatString: string");
+        tokenList.assertLexeme(Lexeme.STRCON, "Parser-FormatString: string");
         return new FormatString(tokenList.nextToken().getContent());
     }
 
@@ -655,8 +649,8 @@ public class Parser {
      * <额外语法>
      * Ident ::= 非keyword的字符串
      */
-    private String parseIdent() {
-        return tokenList.nextToken().getContent();
+    private Ident parseIdent() {
+        return new Ident(tokenList.nextToken());
     }
 
     /**
@@ -664,17 +658,17 @@ public class Parser {
      * InitArray ::= '{' [ InitVal { ',' InitVal } ] '}'
      */
     private ConstInitArray parseConstInitArray() throws Exception {
-        tokenList.lookingAt().assertLexeme(Lexeme.LBRACE, "Parser-ConstInitArray: {");
-        tokenList.skip();
+        tokenList.assertLexeme(Lexeme.LBRACE, "Parser-ConstInitArray: {");
+        tokenList.skip(); // skip '{'
         ArrayList<ConstInitVal> constInitVals = new ArrayList<>();
         if (!tokenList.lookingAtIsOf(Lexeme.RBRACE)) {
             constInitVals.add(parseConstInitVal());
             while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-                tokenList.skip();
+                tokenList.skip(); // skip ','
                 constInitVals.add(parseConstInitVal());
             }
         }
-        tokenList.nextToken().assertLexeme(Lexeme.RBRACE, "Parser-ConstInitArray: }");
+        tokenList.assertLexemeAndSkip(Lexeme.RBRACE, "Parser-ConstInitArray: }");
         return new ConstInitArray(constInitVals);
     }
 
@@ -683,17 +677,17 @@ public class Parser {
      * InitArray ::= '{' [ InitVal { ',' InitVal } ] '}'
      */
     private InitArray parseInitArray() throws Exception {
-        tokenList.lookingAt().assertLexeme(Lexeme.LBRACE, "Parser-InitArray: {");
-        tokenList.skip();
+        tokenList.assertLexeme(Lexeme.LBRACE, "Parser-InitArray: {");
+        tokenList.skip(); // skip '{'
         ArrayList<InitVal> initVals = new ArrayList<>();
         if (!tokenList.lookingAtIsOf(Lexeme.RBRACE)) {
             initVals.add(parseInitVal());
             while (tokenList.lookingAtIsOf(Lexeme.COMMA)) {
-                tokenList.skip();
+                tokenList.skip(); // skip ','
                 initVals.add(parseInitVal());
             }
         }
-        tokenList.nextToken().assertLexeme(Lexeme.RBRACE, "Parser-InitArray: }");
+        tokenList.assertLexemeAndSkip(Lexeme.RBRACE, "Parser-InitArray: }");
         return new InitArray(initVals);
     }
 

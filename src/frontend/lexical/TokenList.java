@@ -1,5 +1,8 @@
 package frontend.lexical;
 
+import exceptions.CompileError;
+import exceptions.ErrorBuilder;
+import exceptions.ErrorType;
 import frontend.syntax.SyntaxOutputBuilder;
 
 import java.util.ArrayList;
@@ -73,6 +76,15 @@ public class TokenList {
         return lookingAt().getLexeme().isOf(lexemes);
     }
 
+    public boolean lookingAtExp() {
+        return lookingAtIsOf(
+                Lexeme.IDENFR, Lexeme.INTCON,
+                Lexeme.PLUS, Lexeme.MINU,
+                Lexeme.NOT,
+                Lexeme.LPARENT
+        );
+    }
+
     public boolean isAssignStmt() {
         for (int i = index; i < tokenList.size(); i++) {
             if (tokenList.get(i).getLexeme().isOf(Lexeme.ASSIGN)) {
@@ -101,6 +113,30 @@ public class TokenList {
             sb.append(tokenList.get(i)).append('\n');
         }
         return sb.toString();
+    }
+
+    private boolean _assertLexeme(Lexeme lexeme, String message) throws Exception {
+        Token token = tokenList.get(index);
+        int errorLine = tokenList.get(index - 1).getLineNum();
+        if (!token.getLexeme().equals(lexeme)) {
+            ErrorBuilder.appendError(new CompileError(errorLine, switch (lexeme) {
+                case SEMICN -> ErrorType.MISSING_SEMICOLON;
+                case RPARENT -> ErrorType.MISSING_RIGHT_PARENT;
+                case RBRACK -> ErrorType.MISSING_RIGHT_BRACKET;
+                default -> throw new Exception(lexeme + "你不应该在这里使用assertLexeme");
+            }, message));
+        }
+        return token.getLexeme().equals(lexeme);
+    }
+
+    public void assertLexeme(Lexeme lexeme, String message) throws Exception {
+        _assertLexeme(lexeme, message);
+    }
+
+    public void assertLexemeAndSkip(Lexeme lexeme, String message) throws Exception {
+        if (_assertLexeme(lexeme, message)) {
+            skip();
+        }
     }
 
 
