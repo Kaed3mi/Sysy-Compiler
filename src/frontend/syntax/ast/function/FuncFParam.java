@@ -16,11 +16,11 @@ public class FuncFParam {
     private final ArrayList<ConstExp> arrayDim;
     private final boolean isArray;
 
-    public FuncFParam(BType bType, Ident ident, ArrayList<ConstExp> arrayDim) {
+    public FuncFParam(BType bType, Ident ident, ArrayList<ConstExp> arrayDim, boolean isArray) {
         this.bType = bType;
         this.ident = ident;
         this.arrayDim = arrayDim;
-        this.isArray = !arrayDim.isEmpty();
+        this.isArray = isArray;
     }
 
     public BType getbType() {

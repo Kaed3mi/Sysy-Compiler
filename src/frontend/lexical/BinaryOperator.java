@@ -2,7 +2,7 @@ package frontend.lexical;
 
 import java.util.List;
 
-public enum BinaryOperate {
+public enum BinaryOperator {
 
     LOR(Lexeme.OR),
     LAND(Lexeme.AND),
@@ -12,7 +12,7 @@ public enum BinaryOperate {
     MUL(Lexeme.MULT, Lexeme.DIV, Lexeme.MOD);
     private final List<Lexeme> lexemes;
 
-    BinaryOperate(Lexeme... lexemes) {
+    BinaryOperator(Lexeme... lexemes) {
         this.lexemes = List.of(lexemes);
     }
 

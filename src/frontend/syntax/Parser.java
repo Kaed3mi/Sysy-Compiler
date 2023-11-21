@@ -232,9 +232,11 @@ public class Parser {
         BType bType = parseBType();
         Ident ident = parseIdent();
         ArrayList<ConstExp> arrayDim = new ArrayList<>();
+        boolean isArray = false;
         if (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
+            isArray = true;
             tokenList.skip(); // skip '['
-            arrayDim.add(null); // 当为一位数组时，有一个null占位
+            // arrayDim.add(null); // 当为一位数组时，有一个null占位
             tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-FuncFParam ]");
             while (tokenList.lookingAtIsOf(Lexeme.LBRACK)) {
                 tokenList.skip(); // skip '['
@@ -242,7 +244,7 @@ public class Parser {
                 tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-FuncFParam ]");
             }
         }
-        FuncFParam ret = new FuncFParam(bType, ident, arrayDim);
+        FuncFParam ret = new FuncFParam(bType, ident, arrayDim, isArray);
         SyntaxOutputBuilder.appendLine("<FuncFParam>");
         return ret;
     }
@@ -391,7 +393,7 @@ public class Parser {
      * 条件表达式 Cond → LOrExp
      */
     private Cond parseCond() throws Exception {
-        BinaryExp binaryExp = parseBinaryExp(BinaryOperate.LOR);
+        BinaryExp binaryExp = parseBinaryExp(BinaryOperator.LOR);
         Cond ret = new Cond(binaryExp);
         SyntaxOutputBuilder.appendLine("<Cond>");
         return ret;
@@ -453,36 +455,36 @@ public class Parser {
      * MulExp | AddExp ('+' | '−') MulExp
      */
     private AddExp parseAddExp() throws Exception {
-        BinaryExp binaryExp = parseBinaryExp(BinaryOperate.ADD);
+        BinaryExp binaryExp = parseBinaryExp(BinaryOperator.ADD);
         return new AddExp(binaryExp);
     }
 
     /**
      * <额外语法>
      */
-    private BinaryExp parseBinaryExp(BinaryOperate binaryOperate) throws Exception {
-        Exp first = parseSubBinaryExp(binaryOperate);
-        SyntaxOutputBuilder.appendLine(binaryOperate.getExpSyntax());
+    private BinaryExp parseBinaryExp(BinaryOperator binaryOperator) throws Exception {
+        Exp first = parseSubBinaryExp(binaryOperator);
+        SyntaxOutputBuilder.appendLine(binaryOperator.getExpSyntax());
         ArrayList<Token> operators = new ArrayList<>();
         ArrayList<Exp> follows = new ArrayList<>();
-        while (tokenList.hasNext() && binaryOperate.contains(tokenList.lookingAt().getLexeme())) {
+        while (tokenList.hasNext() && binaryOperator.contains(tokenList.lookingAt().getLexeme())) {
             operators.add(tokenList.nextToken());
-            follows.add(parseSubBinaryExp(binaryOperate));
-            SyntaxOutputBuilder.appendLine(binaryOperate.getExpSyntax());
+            follows.add(parseSubBinaryExp(binaryOperator));
+            SyntaxOutputBuilder.appendLine(binaryOperator.getExpSyntax());
         }
-        return new BinaryExp(first, operators, follows);
+        return new BinaryExp(binaryOperator, first, operators, follows);
     }
 
     /**
      * <额外语法>
      */
-    private Exp parseSubBinaryExp(BinaryOperate binaryOperate) throws Exception {
-        return switch (binaryOperate) {
-            case LOR -> parseBinaryExp(BinaryOperate.LAND);
-            case LAND -> parseBinaryExp(BinaryOperate.EQ);
-            case EQ -> parseBinaryExp(BinaryOperate.REL);
-            case REL -> parseBinaryExp(BinaryOperate.ADD);
-            case ADD -> parseBinaryExp(BinaryOperate.MUL);
+    private Exp parseSubBinaryExp(BinaryOperator binaryOperator) throws Exception {
+        return switch (binaryOperator) {
+            case LOR -> parseBinaryExp(BinaryOperator.LAND);
+            case LAND -> parseBinaryExp(BinaryOperator.EQ);
+            case EQ -> parseBinaryExp(BinaryOperator.REL);
+            case REL -> parseBinaryExp(BinaryOperator.ADD);
+            case ADD -> parseBinaryExp(BinaryOperator.MUL);
             case MUL -> parseUnaryExp();
         };
     }

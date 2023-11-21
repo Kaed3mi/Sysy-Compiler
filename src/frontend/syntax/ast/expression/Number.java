@@ -8,4 +8,9 @@ public class Number implements PrimaryExp {
     public Number(Token token) {
         this.token = token;
     }
+
+    public String getVal() {
+        return token.getContent();
+    }
+
 }

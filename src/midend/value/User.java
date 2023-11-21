@@ -1,4 +1,4 @@
 package midend.value;
 
-public class User {
+public interface User {
 }

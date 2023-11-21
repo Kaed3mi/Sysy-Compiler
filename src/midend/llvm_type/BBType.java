@@ -1,4 +1,4 @@
 package midend.llvm_type;
 
-public class BBType {
+public class BBType extends LLvmType {
 }

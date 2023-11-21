@@ -1,17 +1,22 @@
 package frontend.semantic;
 
 import frontend.lexical.Ident;
+import frontend.semantic.initialization.Initialization;
+import midend.llvm_type.LLvmType;
+import midend.value.Value;
 
 public class Symbol {
 
     private final Ident ident;
-    private final SymType symType;
-    private final boolean isConstant;
+    private final LLvmType lLvmType;
+    private Initialization constInitialization;
+    private final Value pointer;
 
-    public Symbol(Ident ident, SymType symType, boolean isConstant) {
+    public Symbol(Ident ident, LLvmType lLvmType, Initialization constInitialization, Value pointer) {
         this.ident = ident;
-        this.symType = symType;
-        this.isConstant = isConstant;
+        this.lLvmType = lLvmType;
+        this.constInitialization = constInitialization;
+        this.pointer = pointer;
     }
 
     public Ident getIdent() {
@@ -19,19 +24,27 @@ public class Symbol {
     }
 
     public boolean isConstant() {
-        return isConstant;
+        return constInitialization != null;
     }
 
-    public SymType getSymType() {
-        return symType;
+//    public SymType getSymType() {
+//        return symType;
+//    }
+
+//    public int getDimNum() {
+//        return switch (symType) {
+//            case VAR -> 0;
+//            case DIM1 -> 1;
+//            case DIM2 -> 2;
+//            default -> throw new RuntimeException("没有维数可言");
+//        };
+//    }
+
+    public Initialization constInitialization() {
+        return constInitialization;
     }
 
-    public int getDimNum() throws Exception {
-        return switch (symType) {
-            case VAR -> 0;
-            case DIM1 -> 1;
-            case DIM2 -> 2;
-            default -> throw new Exception("没有维数可言");
-        };
+    public Value pointer() {
+        return pointer;
     }
 }

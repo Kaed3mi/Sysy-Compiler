@@ -9,4 +9,8 @@ public class InitArray implements InitVal, ConstInitVal {
     public InitArray(ArrayList<InitVal> initVals) {
         this.initVals = initVals;
     }
+
+    public ArrayList<InitVal> getInitVals() {
+        return initVals;
+    }
 }

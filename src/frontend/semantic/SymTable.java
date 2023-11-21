@@ -25,7 +25,7 @@ public class SymTable {
         symbolTable.put(symbol.getIdent(), symbol);
     }
 
-    public Symbol find(Ident ident) throws Exception {
+    public Symbol find(Ident ident) {
         if (!symbolTable.containsKey(ident)) {
             if (parentTable == null) {
                 ErrorBuilder.appendError(new CompileError(ident.getLineNum(), ErrorType.UNDEFINED_IDENT, "符号表查不到"));

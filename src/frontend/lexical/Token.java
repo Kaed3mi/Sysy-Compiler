@@ -4,7 +4,7 @@ public class Token {
     private final Lexeme lexeme;
     private final String content;
     private final int lineNum;
-    
+
     public Token(Lexeme lexeme, String content, int lineNum) {
         this.lexeme = lexeme;
         this.content = content;
@@ -29,6 +29,16 @@ public class Token {
     public boolean isComment() {
         return lexeme.equals(Lexeme.COMMENT_BLOCK) || lexeme.equals(Lexeme.COMMENT_SINGLE_LINE);
     }
+
+//    public InstrOp toInstrOp() {
+//        return switch (lexeme) {
+//            case PLUS -> InstrOp.ADD;
+//            case MINU -> InstrOp.SUB;
+//            case MULT -> InstrOp.MUL;
+//            case DIV -> InstrOp.DIV;
+//            default -> throw new RuntimeException("没你的事儿，去等通知");
+//        };
+//    }
 
     @Override
     public String toString() {

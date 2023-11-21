@@ -5,12 +5,14 @@ import frontend.lexical.TokenList;
 import frontend.syntax.Parser;
 import frontend.syntax.SyntaxOutputBuilder;
 import frontend.syntax.ast.Ast;
+import midend.LLvmBuilder;
 
 import java.io.*;
 
 public class Compiler {
     private static File inputFile;
     private static File outputFile;
+    private static File llvmFile;
     private static File errorFile;
 
     public static void main(String[] args) {
@@ -27,8 +29,9 @@ public class Compiler {
             // buildSyntax();
             Visitor visitor = new Visitor(ast);
             visitor.visit();
-            buildException();
-
+            // 错误处理
+            // buildException();
+            buildLLvm();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -38,6 +41,7 @@ public class Compiler {
     private static void fileProcess() {
         inputFile = new File("testfile.txt");
         outputFile = new File("output.txt");
+        llvmFile = new File("llvm_ir.txt");
         errorFile = new File("error.txt");
     }
 
@@ -74,6 +78,14 @@ public class Compiler {
         FileWriter fileWriter = new FileWriter(errorFile);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         bufferedWriter.write(ErrorBuilder.errorOutput());
+        bufferedWriter.close();
+        fileWriter.close();
+    }
+
+    private static void buildLLvm() throws Exception {
+        FileWriter fileWriter = new FileWriter(llvmFile);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        bufferedWriter.write(LLvmBuilder.LLvmOutput());
         bufferedWriter.close();
         fileWriter.close();
     }

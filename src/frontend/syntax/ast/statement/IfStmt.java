@@ -25,4 +25,8 @@ public class IfStmt implements Stmt {
     public Stmt getElseStmt() {
         return elseStmt;
     }
+
+    public boolean hasElseStmt() {
+        return elseStmt != null;
+    }
 }
