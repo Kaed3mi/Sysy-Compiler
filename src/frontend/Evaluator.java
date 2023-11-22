@@ -4,6 +4,7 @@ import frontend.lexical.Lexeme;
 import frontend.lexical.Token;
 import frontend.semantic.SymTable;
 import frontend.semantic.Symbol;
+import frontend.semantic.initialization.ArrayInitialization;
 import frontend.semantic.initialization.Initialization;
 import frontend.semantic.initialization.VarInitialization;
 import frontend.syntax.ast.declaration.InitVal;
@@ -21,6 +22,7 @@ public class Evaluator {
     private SymTable symTable;
 
     public Evaluator(SymTable symTable) {
+        // TODO 不确定这里的symTable会不会出问题
         this.symTable = symTable;
     }
 
@@ -85,34 +87,30 @@ public class Evaluator {
     }
 
     private Constant evalLVal(LVal lVal) {
-        // 查找符号表
         Symbol symbol = symTable.find(lVal.getIdent());
 
-        // 如果是数组, 逐层找偏移量
         Initialization initialization;
         if (symbol.isConstant()) {
             initialization = symbol.constInitialization();
         } else if (symbol.pointer() instanceof GlobalVar) {
             initialization = ((GlobalVar) symbol.pointer()).initialization();
         } else {
-            throw new RuntimeException("Eval exception");
+            throw new RuntimeException("");
         }
-//        ArrayList<IntConstant> indexEvals = new ArrayList<>(); // eval indexes
-//        for (Exp index : lVal.getArrayDim()) {
-//            indexEvals.add((IntConstant) eval(index));
-//        }
-//        for (IntConstant index : indexEvals) {
-//            if (initialization instanceof VarInitialization) {
-//                return symbol.getType() == LlvmType.I32_TYPE ?
-//                        CONST_INT_ZERO : ConstantFloat.CONST_FLOAT_ZERO;
-//            } else if (initialization instanceof ArrayInitialization) {
-//                throw new RuntimeException("Array eval not implemented");
-//                initialization = ((ArrayInitialization) initialization).get((int) index.getVal());
-//            } else {
-//                throw new RuntimeException("Array should be initialized correctly");
-//            }
-//        }
-        Value ret = ((VarInitialization) initialization).initVal(); // 取出初始值
+        ArrayList<IntConstant> indexEvals = new ArrayList<>();
+        for (Exp index : lVal.getArrayDim()) {
+            indexEvals.add((IntConstant) eval(index));
+        }
+        for (IntConstant index : indexEvals) {
+            if (initialization instanceof VarInitialization) {
+                return IntConstant.ZERO;
+            } else if (initialization instanceof ArrayInitialization) {
+                initialization = ((ArrayInitialization) initialization).get(index.getVal());
+            } else {
+                throw new RuntimeException("");
+            }
+        }
+        Value ret = ((VarInitialization) initialization).initVal();
         return ((Constant) ret);
     }
 

@@ -38,4 +38,7 @@ public class ArrayInitialization extends Initialization {
                         .reduce((s1, s2) -> s1 + ", " + s2).orElse(""));
     }
 
+    public Initialization get(int index) {
+        return initializations.get(index);
+    }
 }

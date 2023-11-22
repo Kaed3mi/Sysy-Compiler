@@ -47,4 +47,8 @@ public class Symbol {
     public Value pointer() {
         return pointer;
     }
+
+    public LLvmType lLvmType() {
+        return lLvmType;
+    }
 }
