@@ -1,5 +1,6 @@
 package midend.function;
 
+import backend.GenerateMips;
 import exceptions.CompileError;
 import exceptions.ErrorBuilder;
 import exceptions.ErrorType;
@@ -9,7 +10,7 @@ import midend.LLvmBuilder;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-public class FuncTable {
+public class FuncTable implements GenerateMips {
     private final LinkedHashMap<String, Function> functionTable;
     private final HashSet<Ident> brokenFunctionTable;
 
@@ -28,7 +29,7 @@ public class FuncTable {
     }
 
     public void append(Function function) {
-        functionTable.put(function.lLvmIdent().substring(1), function);
+        functionTable.put(function.lLvmIdent().name(), function);
     }
 
     public boolean isDuplicated(Ident ident) {
@@ -54,11 +55,16 @@ public class FuncTable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        functionTable.values().stream().filter(e -> e instanceof ExternFunc && !e.lLvmIdent().equals("@printf")).
+        functionTable.values().stream().filter(e -> e instanceof ExternFunc && !e.lLvmIdent().name().equals("@printf")).
                 forEach(e -> sb.append(e).append('\n'));
         sb.append('\n');
         functionTable.values().stream().filter(e -> !(e instanceof ExternFunc)).
                 forEach(e -> sb.append(e).append('\n'));
         return sb.toString();
+    }
+
+    @Override
+    public void generateMips() {
+        functionTable.values().stream().filter(e -> !(e instanceof ExternFunc)).forEach(Function::generateMips);
     }
 }

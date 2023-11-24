@@ -23,5 +23,10 @@ public class LLvmBuilder {
         return sb.toString();
     }
 
+    // 后端
+    public static void generateMips() {
+        globalVarTable.forEach(GlobalVar::generateMips);
+        funcTable.generateMips();
+    }
 
 }

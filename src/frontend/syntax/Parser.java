@@ -95,8 +95,13 @@ public class Parser {
             arrayDim.add(parseConstExp());
             tokenList.assertLexemeAndSkip(Lexeme.RBRACK, "Parser-ConstDef: ]");
         }
-        tokenList.assertLexemeAndSkip(Lexeme.ASSIGN, "Parser-ConstDef: =");
-        ConstInitVal constInitVal = parseConstInitVal();
+        ConstInitVal constInitVal;
+        if (tokenList.lookingAtIsOf(Lexeme.ASSIGN)) {
+            tokenList.assertLexemeAndSkip(Lexeme.ASSIGN, "Parser-ConstDef: =");
+            constInitVal = parseConstInitVal();
+        } else {
+            constInitVal = null;
+        }
         ConstDef ret = new ConstDef(ident, arrayDim, constInitVal);
         SyntaxOutputBuilder.appendLine("<ConstDef>");
         return ret;

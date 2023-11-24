@@ -1,6 +1,9 @@
 package midend;
 
+import backend.GenerateMips;
+import backend.MipsBuilder;
 import midend.constant.IntConstant;
+import midend.function.Function;
 import midend.instruction.Instr;
 import midend.instruction.InstrOp;
 import midend.instruction.ReturnInstr;
@@ -9,15 +12,17 @@ import midend.value.Value;
 
 import java.util.ArrayList;
 
-public class BasicBlock extends Value {
+public class BasicBlock extends Value implements GenerateMips {
 
     private final ArrayList<Instr> instrList;
     private boolean isTerminate;
+    private final Function parentFunc;
 
-    public BasicBlock() {
+    public BasicBlock(Function parentFunc) {
         super(LLvmType.BB_TYPE, LLvmIdent.BBIdent());
-        instrList = new ArrayList<>();
-        isTerminate = false;
+        this.instrList = new ArrayList<>();
+        this.isTerminate = false;
+        this.parentFunc = parentFunc;
     }
 
     public void addInstr(Instr instr) {
@@ -35,10 +40,14 @@ public class BasicBlock extends Value {
         }
     }
 
+    public Function getParentFunc() {
+        return parentFunc;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(lLvmIdent.toString().substring(1)).append(":").append('\n');
+        sb.append(lLvmIdent.name()).append(":").append('\n');
         instrList.forEach(e -> sb.append('\t').append(e).append('\n'));
         return sb.toString();
     }
@@ -47,4 +56,12 @@ public class BasicBlock extends Value {
         return "label " + lLvmIdent();
     }
 
+    @Override
+    public void generateMips() {
+        MipsBuilder.addLabel(this);
+        for (Instr instr : instrList) {
+            instr.generateMips();
+        }
+        // instrList.forEach(Instr::generateMips);
+    }
 }

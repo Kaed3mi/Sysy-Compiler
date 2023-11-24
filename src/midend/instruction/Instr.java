@@ -1,6 +1,6 @@
 package midend.instruction;
 
-import frontend.lexical.Ident;
+import backend.GenerateMips;
 import midend.BasicBlock;
 import midend.LLvmIdent;
 import midend.llvm_type.LLvmType;
@@ -10,9 +10,10 @@ import midend.value.Value;
 
 import java.util.ArrayList;
 
-public abstract class Instr extends Value implements User {
+public abstract class Instr extends Value implements User, GenerateMips {
     protected InstrOp instrOp;
     protected ArrayList<Use> operandList;
+
     protected BasicBlock parentBB;
 
     public Instr(LLvmType llvmType, InstrOp instrOp, BasicBlock parentBB) {
@@ -21,10 +22,6 @@ public abstract class Instr extends Value implements User {
         this.instrOp = instrOp;
         this.parentBB = parentBB;
         this.operandList = new ArrayList<>();
-    }
-
-    public void setComment(Ident ident) {
-        lLvmIdent.setComment(ident.getContent());
     }
 
     protected void addUse(Value value) {
@@ -38,8 +35,7 @@ public abstract class Instr extends Value implements User {
     }
 
     @Override
-    public String lLvmIdent() {
-        return lLvmIdent.toString();
+    public void generateMips() {
+        throw new RuntimeException(getClass() + "没有实现toMips");
     }
-
 }

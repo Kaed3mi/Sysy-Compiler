@@ -1,3 +1,4 @@
+import backend.MipsBuilder;
 import exceptions.ErrorBuilder;
 import frontend.Visitor;
 import frontend.lexical.Lexer;
@@ -10,39 +11,38 @@ import midend.LLvmBuilder;
 import java.io.*;
 
 public class Compiler {
-    private static File inputFile;
-    private static File outputFile;
-    private static File llvmFile;
-    private static File errorFile;
+    private static final File testFile = new File("testfile.txt");
+    private static final File syntaxFile = new File("output.txt");
+    private static final File lexicalFile = new File("output.txt");
+    private static final File errorFile = new File("error.txt");
+    private static final File llvmFile = new File("llvm_ir.txt");
+    private static final File mipsFile = new File("mips.txt");
+
 
     public static void main(String[] args) {
         try {
-            fileProcess();
             // 词法分析
-            String sourceCode = getSourceCode(inputFile);
+            String sourceCode = getSourceCode(testFile);
             Lexer lexer = new Lexer(sourceCode);
             TokenList tokenList = lexer.lex();
-            // buildLexical(tokenList);
             // 语法分析
             Parser parser = new Parser(tokenList);
             Ast ast = parser.parse();
-            // buildSyntax();
             Visitor visitor = new Visitor(ast);
             visitor.visit();
-            // 错误处理
-            // buildException();
-            buildLLvm();
+
+            build(tokenList);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-    private static void fileProcess() {
-        inputFile = new File("testfile.txt");
-        outputFile = new File("output.txt");
-        llvmFile = new File("llvm_ir.txt");
-        errorFile = new File("error.txt");
+    private static void build(TokenList tokenList) throws Exception {
+        // buildLexical(tokenList);
+        buildSyntax();
+        // buildException();
+        buildLLvm();
+        buildMips();
     }
 
     private static String getSourceCode(File inputFile) throws Exception {
@@ -59,7 +59,7 @@ public class Compiler {
     }
 
     private static void buildLexical(TokenList tokenList) throws IOException {
-        FileWriter fileWriter = new FileWriter(outputFile);
+        FileWriter fileWriter = new FileWriter(lexicalFile);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         bufferedWriter.write(tokenList.toString());
         bufferedWriter.close();
@@ -67,7 +67,7 @@ public class Compiler {
     }
 
     private static void buildSyntax() throws IOException {
-        FileWriter fileWriter = new FileWriter(outputFile);
+        FileWriter fileWriter = new FileWriter(syntaxFile);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         bufferedWriter.write(SyntaxOutputBuilder.syntaxOutput());
         bufferedWriter.close();
@@ -86,6 +86,14 @@ public class Compiler {
         FileWriter fileWriter = new FileWriter(llvmFile);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         bufferedWriter.write(LLvmBuilder.LLvmOutput());
+        bufferedWriter.close();
+        fileWriter.close();
+    }
+
+    private static void buildMips() throws Exception {
+        FileWriter fileWriter = new FileWriter(mipsFile);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        bufferedWriter.write(MipsBuilder.buildMips());
         bufferedWriter.close();
         fileWriter.close();
     }

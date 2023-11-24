@@ -16,4 +16,8 @@ public class PointerType extends LLvmType {
         return pointeeType + "*";
     }
 
+    @Override
+    public int size() {
+        return 4;
+    }
 }

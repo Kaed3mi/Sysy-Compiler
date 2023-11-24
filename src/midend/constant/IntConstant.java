@@ -11,17 +11,17 @@ public class IntConstant extends Value implements Constant {
     public static final IntConstant ONE = new IntConstant(1);
 
     public IntConstant(Number number) {
-        super(LLvmType.I32_TYPE, LLvmIdent.UNNAMED);
+        super(LLvmType.I32_TYPE, LLvmIdent.ConstantIdent(Integer.parseInt(number.getVal())));
         this.val = Integer.parseInt(number.getVal());
     }
 
     public IntConstant(int val) {
-        super(LLvmType.I32_TYPE, LLvmIdent.UNNAMED);
+        super(LLvmType.I32_TYPE, LLvmIdent.ConstantIdent(val));
         this.val = val;
     }
 
     private IntConstant(String val) {
-        super(LLvmType.I32_TYPE, LLvmIdent.UNNAMED);
+        super(LLvmType.I32_TYPE, LLvmIdent.ConstantIdent(Integer.parseInt(val)));
         this.val = Integer.parseInt(val);
     }
 
@@ -38,9 +38,5 @@ public class IntConstant extends Value implements Constant {
         return String.valueOf(val);
     }
 
-    @Override
-    public String lLvmIdent() {
-        return toString();
-    }
 
 }

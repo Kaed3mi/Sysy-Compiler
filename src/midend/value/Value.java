@@ -26,8 +26,8 @@ public class Value {
         return lLvmType;
     }
 
-    public String lLvmIdent() {
-        return lLvmIdent.toString();
+    public LLvmIdent lLvmIdent() {
+        return lLvmIdent;
     }
 
     /**

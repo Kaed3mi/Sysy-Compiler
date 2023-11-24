@@ -110,26 +110,12 @@ public class Visitor {
      * ConstDef ::= Ident { '[' ConstExp ']' } '=' ConstInitVal
      */
     private void visitConstDef(ConstDef constDef, BType bType) throws Exception {
-        Ident ident = constDef.getIdent();
-        LLvmType pointeeType = bType.toLLvmType();
-        if (curSymTable.isDuplicated(ident)) {
-            ErrorBuilder.appendError(new CompileError(ident.getLineNum(), ErrorType.DUPLICATED_IDENT, "const重定义: " + ident));
-            return;
-        }
-        Value pointer = null;
-        Initialization constInitialization = null;
-
-        visitConstInitVal((ConstInitVal) constDef.getInitVal());
-        // ConstDef一定要有initVal
-
-        curSymTable.append(new Symbol(ident, LLvmType.I32_TYPE, null, pointer));
     }
 
     /**
      * ConstInitVal → ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
      */
     private void visitConstInitVal(ConstInitVal constInitVal) {
-
     }
 
     /**
@@ -166,7 +152,6 @@ public class Visitor {
             if (def.isArray()) {
                 // 需要eval
                 initialization = visitInitArray((InitArray) def.getInitVal(), (ArrayType) pointeeType, isGlobal);
-                // throw new RuntimeException("数组初始化别急");
             } else {
                 if (isGlobal) {
                     // 需要eval
@@ -180,7 +165,7 @@ public class Visitor {
         }
 
         // 全局变量或局部变量
-        Value pointer = null;
+        Value pointer;
         if (isGlobal) {
             if (!def.hasInitVal()) {
                 if (def.isArray()) {
@@ -193,8 +178,8 @@ public class Visitor {
             pointer = new GlobalVar(pointeeType, LLvmIdent.GlobalVarIdent(def.getIdent()), initialization);
             LLvmBuilder.addGlobalVar((GlobalVar) pointer);
         } else {
+            // 局部变量
             pointer = new AllocaInstr(pointeeType, curBasicBlock);
-            ((Instr) pointer).setComment(ident);
             curBasicBlock.addInstr((Instr) pointer);
             if (def.hasInitVal()) {
                 if (initialization instanceof VarInitialization) {
@@ -217,7 +202,7 @@ public class Visitor {
                                 StoreInstr storeInstr = new StoreInstr(init2.initVal(), getElemPtrInstr, curBasicBlock);
                                 curBasicBlock.addInstr(storeInstr);
                             }
-                        } else {
+                        } else if (init1 instanceof VarInitialization) {
                             VarInitialization init2 = (VarInitialization) init1;
                             GetElemPtrInstr getElemPtrInstr = new GetElemPtrInstr(
                                     LLvmType.I32_TYPE, pointer, // 1
@@ -229,6 +214,8 @@ public class Visitor {
                             curBasicBlock.addInstr(storeInstr);
                         }
                     }
+                } else {
+                    throw new RuntimeException("");
                 }
             }
         }
@@ -284,7 +271,7 @@ public class Visitor {
         // 维护符号表
         curSymTable = new SymTable(curSymTable);
         curFunc = new Function(funcDef.toLLvmType(), funcDef.getIdent().toString());
-        curFunc.addBasicBlock(curBasicBlock = new BasicBlock());
+        curFunc.addBasicBlock(curBasicBlock = new BasicBlock(curFunc));
         funcTable.append(curFunc);
         // FuncFParams可能不存在
         if (funcDef.getFuncFParams() != null) {
@@ -435,13 +422,13 @@ public class Visitor {
     private void visitIfStmt(IfStmt ifStmt) throws Exception {
         BasicBlock thenBlock, elseBlock, followBlock;
 
-        curFunc.addBasicBlock(thenBlock = new BasicBlock());
+        curFunc.addBasicBlock(thenBlock = new BasicBlock(curFunc));
         if (ifStmt.hasElseStmt()) {
-            curFunc.addBasicBlock(elseBlock = new BasicBlock());
+            curFunc.addBasicBlock(elseBlock = new BasicBlock(curFunc));
         } else {
             elseBlock = null;
         }
-        curFunc.addBasicBlock(followBlock = new BasicBlock());
+        curFunc.addBasicBlock(followBlock = new BasicBlock(curFunc));
         // visitCond时需要提前知道trueBlock和falseBlock，这里根据是否有elseBlock来判断
         BasicBlock trueBlock = thenBlock, falseBlock = elseBlock == null ? followBlock : elseBlock;
         Value condVal = visitExp(ifStmt.getCond(), trueBlock, falseBlock);
@@ -473,10 +460,10 @@ public class Visitor {
     private void visitLoopStmt(LoopStmt loopStmt) throws Exception {
         // 循环逻辑：condBlock->(bodyBlock, followBlock)
         BasicBlock condBlock, bodyBlock, continueBlock, followBlock;
-        curFunc.addBasicBlock(condBlock = new BasicBlock());
-        curFunc.addBasicBlock(bodyBlock = new BasicBlock());
-        curFunc.addBasicBlock(continueBlock = new BasicBlock());
-        curFunc.addBasicBlock(followBlock = new BasicBlock());
+        curFunc.addBasicBlock(condBlock = new BasicBlock(curFunc));
+        curFunc.addBasicBlock(bodyBlock = new BasicBlock(curFunc));
+        curFunc.addBasicBlock(continueBlock = new BasicBlock(curFunc));
+        curFunc.addBasicBlock(followBlock = new BasicBlock(curFunc));
         // 初始化条件后直接跳入循环
         if (loopStmt.getInitStmt() != null) {
             visitForStmt(loopStmt.getInitStmt());
@@ -630,23 +617,20 @@ public class Visitor {
             curBasicBlock.addInstr((Instr) lValPointer);
         }
         if (isAssign) {
-            if (!(lValPointer.lLvmType() instanceof PointerType &&
-                    ((PointerType) lValPointer.lLvmType()).pointeeType() instanceof BasicType)) {
-                throw new RuntimeException("Only BasicType can be assigned.");
+            if (lValPointer.lLvmType() instanceof PointerType &&
+                    ((PointerType) lValPointer.lLvmType()).pointeeType() instanceof BasicType) {
+                return lValPointer;
             }
-            return lValPointer;
+            throw new RuntimeException("非基础类型不能进行赋值" + ((PointerType) lValPointer.lLvmType()).pointeeType());
         } else {
             if (lValPointeeType instanceof ArrayType) {
                 LLvmType destType = new PointerType(((ArrayType) lValPointeeType).getElementType());
-                BitCastInstr bitCastInstr =
-                        new BitCastInstr(destType, lValPointer, curBasicBlock);
+                BitCastInstr bitCastInstr = new BitCastInstr(lValPointer, destType, curBasicBlock);
                 curBasicBlock.addInstr(bitCastInstr);
-                bitCastInstr.setComment(lVal.getIdent());
                 return bitCastInstr;
             } else {
                 LoadInstr loadInstr = new LoadInstr(lValPointer, curBasicBlock);
                 curBasicBlock.addInstr(loadInstr);
-                loadInstr.setComment(lVal.getIdent());
                 return loadInstr;
             }
         }
@@ -682,7 +666,7 @@ public class Visitor {
 
         BasicBlock nextBlock = falseBlock;
         if (binaryOperator == BinaryOperator.LOR && !binaryExp.getFollows().isEmpty()) {
-            nextBlock = new BasicBlock();
+            nextBlock = new BasicBlock(curFunc);
             curFunc.addBasicBlock(nextBlock);
         }
         if (binaryOperator == BinaryOperator.LOR || binaryOperator == BinaryOperator.LAND) {
@@ -707,14 +691,14 @@ public class Visitor {
                 curBasicBlock = nextBlock;
 
                 if (opIter.hasNext()) {
-                    nextBlock = new BasicBlock();
+                    nextBlock = new BasicBlock(curFunc);
                     curFunc.addBasicBlock(nextBlock);
                 } else {
                     nextBlock = falseBlock;
                 }
                 first = visitExp(exp, trueBlock, nextBlock);
             } else if (op.isOfBinaryOp(BinaryOperator.LAND)) {
-                nextBlock = new BasicBlock();
+                nextBlock = new BasicBlock(curFunc);
                 curFunc.addBasicBlock(nextBlock);
 
                 BranchInstr branchInstr = new BranchInstr(first, nextBlock, falseBlock, curBasicBlock);
@@ -800,7 +784,7 @@ public class Visitor {
             }
         }
         Iterator<Value> it1 = params.iterator();
-        Iterator<Value> it2 = function.getParams().iterator();
+        Iterator<FunctionFParam> it2 = function.getFunctionFParams().iterator();
 
         while (it1.hasNext() && it2.hasNext()) {
             if (it1.next().lLvmType() != it2.next().lLvmType()) {

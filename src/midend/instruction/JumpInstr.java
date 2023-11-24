@@ -1,5 +1,7 @@
 package midend.instruction;
 
+import backend.MipsBuilder;
+import backend.mipsinstr.JInstr;
 import midend.BasicBlock;
 import midend.llvm_type.LLvmType;
 
@@ -21,4 +23,12 @@ public class JumpInstr extends Instr {
                 targetBlock.label()
         );
     }
+
+    @Override
+    public void generateMips() {
+        MipsBuilder.saveAllReg();
+        MipsBuilder.clearReg();
+        MipsBuilder.addMipsInstr(new JInstr(JInstr.JType.j, MipsBuilder.getLabel(targetBlock)));
+    }
+
 }

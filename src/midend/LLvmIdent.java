@@ -1,59 +1,59 @@
 package midend;
 
-import config.Config;
 import frontend.lexical.Ident;
 
 public class LLvmIdent {
 
-    public static LLvmIdent UNNAMED = new LLvmIdent("这个llvmIdent是匿名。");
+    public static LLvmIdent UNNAMED = new LLvmIdent("", "这个llvmIdent是匿名。");
     private static int LLvmRegCnt = 0;
     private static int BasicBlockCnt = 0;
     private static int FuncFParamCnt = 0;
+    private final String prefix;
     private final String name;
-    private String comment;
 
-    private LLvmIdent(String name) {
+    private LLvmIdent(String prefix, String name) {
+        this.prefix = prefix;
         this.name = name;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public static LLvmIdent ConstantIdent(int val) {
+        return new LLvmIdent("", String.valueOf(val));
     }
 
     public static LLvmIdent GlobalVarIdent(Ident ident) {
-        return new LLvmIdent("@" + ident.toString());
+        return new LLvmIdent("@", ident.toString());
     }
 
     public static LLvmIdent FuncIdent(Ident ident) {
-        return new LLvmIdent("@" + ident);
+        return new LLvmIdent("@", ident.toString());
     }
 
     public static LLvmIdent FuncIdent(String name) {
-        return new LLvmIdent("@" + name);
+        return new LLvmIdent("@", name);
     }
 
     public static LLvmIdent BBIdent() {
-        return new LLvmIdent("%b" + BasicBlockCnt++);
+        return new LLvmIdent("%b", String.valueOf(BasicBlockCnt++));
     }
 
     public static LLvmIdent RegIdent() {
-        return new LLvmIdent("%v" + LLvmRegCnt++);
+        return new LLvmIdent("%v", String.valueOf(LLvmRegCnt++));
     }
 
     public static LLvmIdent NoneIdent() {
-        return new LLvmIdent("%v" + -1);
+        return new LLvmIdent("%v", String.valueOf(-1));
     }
 
     public static LLvmIdent FuncFParamIdent() {
-        return new LLvmIdent("%f" + FuncFParamCnt++);
+        return new LLvmIdent("%f", String.valueOf(FuncFParamCnt++));
     }
 
     @Override
     public String toString() {
-        if (Config.LLVM_COMMENT && comment != null) {
-            return name + "(@" + comment + ")";
-        } else {
-            return name;
-        }
+        return prefix + name;
+    }
+
+    public String name() {
+        return name;
     }
 }

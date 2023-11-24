@@ -14,7 +14,7 @@ public class ArrayInitialization extends Initialization {
         // 补全零初始化
         LLvmType elementType = ((ArrayType) lLvmType).getElementType();
         if (isGlobal) {
-            while (initializations.size() < ((ArrayType) lLvmType).getSize()) {
+            while (initializations.size() < ((ArrayType) lLvmType).length()) {
                 initializations.add(elementType instanceof ArrayType ? new ZeroInitialization(elementType) : new VarInitialization(IntConstant.ZERO));
             }
         }

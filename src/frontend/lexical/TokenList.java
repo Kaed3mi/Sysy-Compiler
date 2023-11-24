@@ -109,7 +109,7 @@ public class TokenList {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (int i = index; i < tokenList.size(); i++) {
+        for (int i = 0; i < tokenList.size(); i++) {
             sb.append(tokenList.get(i)).append('\n');
         }
         return sb.toString();
