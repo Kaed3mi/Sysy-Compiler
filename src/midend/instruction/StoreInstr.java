@@ -72,6 +72,8 @@ public class StoreInstr extends Instr {
             } else if (operand instanceof Reg rt) {
                 MipsBuilder.addMipsInstr(new MemInstr(MemInstr.MemType.sw, rt, new Addr(Immediate.ZERO, (Reg) arrayOffset)));
             }
+        } else {
+            throw new RuntimeException();
         }
     }
 }

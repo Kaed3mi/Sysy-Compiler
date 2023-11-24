@@ -9,7 +9,6 @@ import backend.operand.Operand;
 import backend.operand.Reg;
 import midend.BasicBlock;
 import midend.GlobalVar;
-import midend.constant.Constant;
 import midend.llvm_type.ArrayType;
 import midend.llvm_type.LLvmType;
 import midend.llvm_type.PointerType;
@@ -55,7 +54,7 @@ public class GetElemPtrInstr extends Instr {
         // 需要生成偏移地址
         LLvmType pointeeType = ptr.lLvmType();
         ArrayList<Integer> sizes = new ArrayList<>();
-        for (Value value : indexes) {
+        for (Value ignored : indexes) {
             if (pointeeType instanceof PointerType) {
                 // 函数参数
                 pointeeType = ((PointerType) pointeeType).pointeeType();
@@ -70,13 +69,12 @@ public class GetElemPtrInstr extends Instr {
         MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, Immediate.ZERO));
         int intConstantOffset = 0; // 若数组下标是const，可以直接得到的偏移，减少指令。
         for (int i = 0; i < indexes.size(); i++) {
-            Value offset_i = indexes.get(i);
-            if (offset_i instanceof Constant) {
+            Operand offset_i = MipsBuilder.applyOperand(indexes.get(i), true);
+            if (offset_i instanceof Immediate imm) {
                 // 直接加上立即数
-                intConstantOffset += sizes.get(i) * ((Constant) offset_i).getVal();
-            } else {
+                intConstantOffset += sizes.get(i) * imm.getVal();
+            } else if (offset_i instanceof Reg rd) {
                 // 利用乘法指令计算偏移
-                Operand rd = MipsBuilder.applyOperand(offset_i, true);
                 MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v1, new Immediate(sizes.get(i))));
                 MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, Reg.v1, rd));
                 MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, Reg.v1));

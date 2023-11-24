@@ -5,7 +5,7 @@ import backend.operand.Operand;
 public class RInstr extends MipsInstr {
 
     public enum RType implements MipsInstrType {
-        addu, sub,
+        addu, subu,
         or
     }
 

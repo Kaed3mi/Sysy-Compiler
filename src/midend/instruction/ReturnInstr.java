@@ -9,7 +9,6 @@ import backend.operand.Immediate;
 import backend.operand.Operand;
 import backend.operand.Reg;
 import midend.BasicBlock;
-import midend.constant.IntConstant;
 import midend.llvm_type.LLvmType;
 import midend.value.Value;
 
@@ -48,12 +47,12 @@ public class ReturnInstr extends Instr {
             return;
         }
         if (returnValue != null) {
-            if (returnValue instanceof IntConstant) {
+            Operand rt = MipsBuilder.applyOperand(returnValue, true);
+            if (rt instanceof Immediate imme) {
                 // 返回立即数
-                MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, new Immediate((IntConstant) returnValue)));
-            } else {
-                Operand reg = MipsBuilder.applyOperand(returnValue, false);
-                MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.or, Reg.v0, reg, Reg.zero));
+                MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imme));
+            } else if (rt instanceof Reg) {
+                MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.or, Reg.v0, rt, Reg.zero));
             }
         }
         MipsBuilder.clearReg();

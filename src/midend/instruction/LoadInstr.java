@@ -1,7 +1,6 @@
 package midend.instruction;
 
 import backend.MipsBuilder;
-import backend.mipsinstr.IInstr;
 import backend.mipsinstr.MemInstr;
 import backend.mipsinstr.RInstr;
 import backend.operand.Addr;
@@ -53,11 +52,9 @@ public class LoadInstr extends Instr {
             }
         } else if (pointer instanceof GetElemPtrInstr) {
             Reg elementAddr = (Reg) MipsBuilder.applyOperand(pointer, true);
-            if (rt instanceof Immediate imm) {
-                MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, rt, imm));
-            } else if (rt instanceof Reg) {
-                MipsBuilder.addMipsInstr(new MemInstr(MemInstr.MemType.lw, rt, new Addr(Immediate.ZERO, elementAddr))); //直接lw $t0 0($v0)可以简化指令
-            }
+            MipsBuilder.addMipsInstr(new MemInstr(MemInstr.MemType.lw, rt, new Addr(Immediate.ZERO, elementAddr))); //直接lw $t0 0($v0)可以简化指令
+        } else {
+            throw new RuntimeException();
         }
     }
 }

@@ -7,8 +7,6 @@ import backend.operand.Immediate;
 import backend.operand.Operand;
 import backend.operand.Reg;
 import midend.BasicBlock;
-import midend.constant.Constant;
-import midend.constant.IntConstant;
 import midend.llvm_type.LLvmType;
 import midend.value.Value;
 
@@ -84,18 +82,14 @@ public class IcmpInstr extends Instr {
                 operand1.lLvmIdent());
     }
 
-    // EQ("eq"),// equal
-    //        NE("ne"),// not equal
-    //        SGT("sgt"),// signed greater than
-    //        SGE("sge"),// signed greater or equal
-    //        SLT("slt"),// signed less than
-    //        SLE("sle");// signed less or equal
     @Override
     public void generateMips() {
         Operand rt = MipsBuilder.applyOperand(this, false);
-        if (operand0 instanceof Constant && operand1 instanceof Constant) {
-            int op0 = ((Constant) operand0).getVal();
-            int op1 = ((Constant) operand1).getVal();
+        Operand rs = MipsBuilder.applyOperand(operand0, true);
+        Operand rd = MipsBuilder.applyOperand(operand1, true);
+        if (rs instanceof Immediate imm0 && rd instanceof Immediate imm1) {
+            int op0 = imm0.getVal();
+            int op1 = imm1.getVal();
             int ret = switch (icmpOp) {
                 case EQ -> op0 == op1 ? 1 : 0;
                 case NE -> op0 != op1 ? 1 : 0;
@@ -105,23 +99,19 @@ public class IcmpInstr extends Instr {
                 case SLE -> op0 <= op1 ? 1 : 0;
             };
             MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, rt, new Immediate(ret)));
-        } else if (operand0 instanceof Constant) {
-            Operand rs = MipsBuilder.applyOperand(operand1, true);
-            Immediate imm = new Immediate((IntConstant) operand0);
+        } else if (rs instanceof Immediate imm && rd instanceof Reg) {
             switch (icmpOp) {
-                case EQ -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.seq, rt, rs, imm));
-                case NE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sne, rt, rs, imm));
-                case SGT -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sle, rt, rs, imm));
+                case EQ -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.seq, rt, rd, imm));
+                case NE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sne, rt, rd, imm));
+                case SGT -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sle, rt, rd, imm));
                 case SGE -> {
                     MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imm));
-                    MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.slt, rt, rs, Reg.v0));
+                    MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.slt, rt, rd, Reg.v0));
                 }
-                case SLT -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sge, rt, rs, imm));
-                case SLE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sgt, rt, rs, imm));
+                case SLT -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sge, rt, rd, imm));
+                case SLE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sgt, rt, rd, imm));
             }
-        } else if (operand1 instanceof Constant) {
-            Operand rs = MipsBuilder.applyOperand(operand0, true);
-            Immediate imm = new Immediate((IntConstant) operand1);
+        } else if (rs instanceof Reg && rd instanceof Immediate imm) {
             switch (icmpOp) {
                 case EQ -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.seq, rt, rs, imm));
                 case NE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sne, rt, rs, imm));
@@ -133,9 +123,7 @@ public class IcmpInstr extends Instr {
                 }
                 case SLE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sle, rt, rs, imm));
             }
-        } else {
-            Operand rs = MipsBuilder.applyOperand(operand0, true);
-            Operand rd = MipsBuilder.applyOperand(operand1, true);
+        } else if (rs instanceof Reg && rd instanceof Reg) {
             switch (icmpOp) {
                 case EQ -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.seq, rt, rs, rd));
                 case NE -> MipsBuilder.addMipsInstr(new SInstr(SInstr.SType.sne, rt, rs, rd));

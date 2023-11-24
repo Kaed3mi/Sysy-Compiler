@@ -40,7 +40,7 @@ public class AluInstr extends Instr {
             // r指令
             switch (instrOp) {
                 case ADD -> MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.addu, rt, rs, rd));
-                case SUB -> MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.sub, rt, rs, rd));
+                case SUB -> MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.subu, rt, rs, rd));
                 case MUL -> {
                     MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, rs, rd));
                     MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, rt));
@@ -79,7 +79,7 @@ public class AluInstr extends Instr {
                 case ADD -> MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.addiu, rt, rd, imm));
                 case SUB -> {
                     MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imm));
-                    MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.sub, rt, Reg.v0, rd));
+                    MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.subu, rt, Reg.v0, rd));
                 }
                 case MUL -> {
                     MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imm));
