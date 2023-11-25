@@ -1,6 +1,7 @@
 package frontend.syntax.ast.declaration;
 
 import frontend.lexical.Ident;
+import frontend.syntax.ast.expression.BinaryExp;
 import frontend.syntax.ast.expression.ConstExp;
 
 import java.util.ArrayList;

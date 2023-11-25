@@ -78,7 +78,7 @@ public class Parser {
     /**
      * BType ::= int
      */
-    private BType parseBType() throws Exception {
+    private BType parseBType() {
         BType ret = new BType(tokenList.nextToken());
         SyntaxOutputBuilder.appendLine("<BType>");
         return ret;

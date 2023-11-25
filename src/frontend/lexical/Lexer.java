@@ -17,7 +17,7 @@ public class Lexer {
         this.curLine = 1;
     }
 
-    public TokenList lex() throws Exception {
+    public TokenList lex() {
         TokenList tokenList = new TokenList();
         String currentSourceCode = sourceCode.trim();
         while (!currentSourceCode.isEmpty()) {
@@ -46,7 +46,7 @@ public class Lexer {
                     ErrorBuilder.appendError(new CompileError(curLine, ErrorType.ILLEGAL_CHAR, "格式字符串中出现非法字符: " + content));
                 } else {
                     // 你怎么什么都匹配不上
-                    throw new Exception("Lexer: 你怎么什么都匹配不上" + sourceCode);
+                    throw new RuntimeException("Lexer: 你怎么什么都匹配不上" + sourceCode);
                 }
             }
         }

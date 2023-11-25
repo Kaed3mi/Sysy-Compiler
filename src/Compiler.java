@@ -22,7 +22,7 @@ public class Compiler {
     public static void main(String[] args) {
         try {
             // 词法分析
-            String sourceCode = getSourceCode(testFile);
+            String sourceCode = getSourceCode();
             Lexer lexer = new Lexer(sourceCode);
             TokenList tokenList = lexer.lex();
             // 语法分析
@@ -39,15 +39,15 @@ public class Compiler {
 
     private static void build(TokenList tokenList) throws Exception {
         // buildLexical(tokenList);
-        buildSyntax();
+//        buildSyntax();
         // buildException();
         buildLLvm();
         buildMips();
     }
 
-    private static String getSourceCode(File inputFile) throws Exception {
+    private static String getSourceCode() throws Exception {
         StringBuilder sb = new StringBuilder();
-        FileReader fileReader = new FileReader(inputFile);
+        FileReader fileReader = new FileReader(testFile);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
         String line;
         while ((line = bufferedReader.readLine()) != null) {

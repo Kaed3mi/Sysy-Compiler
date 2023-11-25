@@ -3,8 +3,7 @@ package midend;
 import frontend.lexical.Ident;
 
 public class LLvmIdent {
-
-    public static LLvmIdent UNNAMED = new LLvmIdent("", "这个llvmIdent是匿名。");
+    
     private static int LLvmRegCnt = 0;
     private static int BasicBlockCnt = 0;
     private static int FuncFParamCnt = 0;

@@ -12,19 +12,19 @@ public class BType {
     private final Type type;
 
 
-    public BType(Token token) throws Exception {
+    public BType(Token token) {
         if (token.getLexeme().isOf(Lexeme.INTTK)) {
             type = Type.INT;
         } else {
-            throw new Exception("BType类型错误");
+            throw new RuntimeException("BType类型错误");
         }
     }
 
-    public LLvmType toLLvmType() throws Exception {
+    public LLvmType toLLvmType() {
         if (type.equals(Type.INT)) {
             return LLvmType.I32_TYPE;
         } else {
-            throw new Exception("BType转LLvm类型类型错误");
+            throw new RuntimeException("BType转LLvm类型类型错误");
         }
     }
 }

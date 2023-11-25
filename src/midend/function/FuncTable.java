@@ -14,7 +14,7 @@ public class FuncTable implements GenerateMips {
     private final LinkedHashMap<String, Function> functionTable;
     private final HashSet<Ident> brokenFunctionTable;
 
-    public FuncTable() throws Exception {
+    public FuncTable() {
         this.functionTable = new LinkedHashMap<>();
         this.brokenFunctionTable = new HashSet<>();
         init();

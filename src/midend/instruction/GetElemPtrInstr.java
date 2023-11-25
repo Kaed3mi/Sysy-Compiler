@@ -76,7 +76,7 @@ public class GetElemPtrInstr extends Instr {
             } else if (offset_i instanceof Reg rd) {
                 // 利用乘法指令计算偏移
                 MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v1, new Immediate(sizes.get(i))));
-                MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, Reg.v1, rd));
+                MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.multu, Reg.v1, rd));
                 MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, Reg.v1));
                 MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.addu, Reg.v0, Reg.v0, Reg.v1));
             }

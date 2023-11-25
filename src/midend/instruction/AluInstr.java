@@ -42,7 +42,7 @@ public class AluInstr extends Instr {
                 case ADD -> MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.addu, rt, rs, rd));
                 case SUB -> MipsBuilder.addMipsInstr(new RInstr(RInstr.RType.subu, rt, rs, rd));
                 case MUL -> {
-                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, rs, rd));
+                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.multu, rs, rd));
                     MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, rt));
                 }
                 case DIV -> {
@@ -60,7 +60,7 @@ public class AluInstr extends Instr {
                 case SUB -> MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.addiu, rt, rs, imm.neg()));
                 case MUL -> {
                     MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imm));
-                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, rs, Reg.v0));
+                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.multu, rs, Reg.v0));
                     MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, rt));
                 }
                 case DIV -> {
@@ -83,7 +83,7 @@ public class AluInstr extends Instr {
                 }
                 case MUL -> {
                     MipsBuilder.addMipsInstr(new IInstr(IInstr.IType.li, Reg.v0, imm));
-                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mult, rd, Reg.v0));
+                    MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.multu, rd, Reg.v0));
                     MipsBuilder.addMipsInstr(new MDInstr(MDInstr.MDType.mflo, rt));
                 }
                 case DIV -> {

@@ -115,7 +115,7 @@ public class TokenList {
         return sb.toString();
     }
 
-    private boolean _assertLexeme(Lexeme lexeme, String message) throws Exception {
+    private boolean _assertLexeme(Lexeme lexeme, String message) {
         Token token = tokenList.get(index);
         int errorLine = tokenList.get(index - 1).getLineNum();
         if (!token.getLexeme().equals(lexeme)) {
@@ -123,17 +123,17 @@ public class TokenList {
                 case SEMICN -> ErrorType.MISSING_SEMICOLON;
                 case RPARENT -> ErrorType.MISSING_RIGHT_PARENT;
                 case RBRACK -> ErrorType.MISSING_RIGHT_BRACKET;
-                default -> throw new Exception(lexeme + "你不应该在这里使用assertLexeme");
+                default -> throw new RuntimeException(lexeme + "你不应该在这里使用assertLexeme");
             }, message));
         }
         return token.getLexeme().equals(lexeme);
     }
 
-    public void assertLexeme(Lexeme lexeme, String message) throws Exception {
+    public void assertLexeme(Lexeme lexeme, String message) {
         _assertLexeme(lexeme, message);
     }
 
-    public void assertLexemeAndSkip(Lexeme lexeme, String message) throws Exception {
+    public void assertLexemeAndSkip(Lexeme lexeme, String message) {
         if (_assertLexeme(lexeme, message)) {
             skip();
         }

@@ -51,11 +51,11 @@ public class Visitor {
     private BasicBlock curBasicBlock;
     private Function curFunc;
     private final Stack<Pair<BasicBlock, BasicBlock>> loopStack; // K表示continueDst，V表示breakDst
-    private SymTable curSymTable;
+    protected SymTable curSymTable;
     private final FuncTable funcTable;
     private final Evaluator evaluator;
 
-    public Visitor(Ast ast) throws Exception {
+    public Visitor(Ast ast) {
         this.ast = ast;
         isGlobal = true;
         curBasicBlock = null;
@@ -63,11 +63,11 @@ public class Visitor {
         loopStack = new Stack<>();
         curSymTable = new SymTable(null);
         funcTable = new FuncTable();
-        evaluator = new Evaluator(curSymTable);
+        evaluator = new Evaluator(this);
     }
 
 
-    public void visit() throws Exception {
+    public void visit() {
         for (CompUnit compUnit : ast) {
             visitCompUnit(compUnit);
         }
@@ -76,7 +76,7 @@ public class Visitor {
     /**
      * CompUnit ::= { Decl } { FuncDef } MainFuncDef
      */
-    private void visitCompUnit(CompUnit compUnit) throws Exception {
+    private void visitCompUnit(CompUnit compUnit) {
         if (compUnit instanceof Decl) {
             visitDecl((Decl) compUnit);
         } else {
@@ -89,7 +89,7 @@ public class Visitor {
     /**
      * Decl ::= ConstDecl | VarDecl
      */
-    private void visitDecl(Decl decl) throws Exception {
+    private void visitDecl(Decl decl) {
         if (decl instanceof ConstDecl) {
             visitConstDecl((ConstDecl) decl);
         } else {
@@ -100,7 +100,7 @@ public class Visitor {
     /**
      * ConstDecl ::= 'const' BType ConstDef { ',' ConstDef } ';'
      */
-    private void visitConstDecl(ConstDecl constDecl) throws Exception {
+    private void visitConstDecl(ConstDecl constDecl) {
         for (ConstDef constDef : constDecl.getConstDefList()) {
             visitDef(constDef, constDecl.getbType());
         }
@@ -109,7 +109,7 @@ public class Visitor {
     /**
      * ConstDef ::= Ident { '[' ConstExp ']' } '=' ConstInitVal
      */
-    private void visitConstDef(ConstDef constDef, BType bType) throws Exception {
+    private void visitConstDef(ConstDef constDef, BType bType) {
     }
 
     /**
@@ -121,7 +121,7 @@ public class Visitor {
     /**
      * VarDecl ::= BType VarDef { ',' VarDef } ';'
      */
-    private void visitVarDecl(VarDecl varDecl) throws Exception {
+    private void visitVarDecl(VarDecl varDecl) {
         for (VarDef varDef : varDecl.getVarDefList()) {
             visitDef(varDef, varDecl.getbType());
         }
@@ -131,12 +131,12 @@ public class Visitor {
      * 包含普通变量、一维数组、二维数组定义
      * VarDef ::= Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal
      */
-    private void visitDef(Def def, BType bType) throws Exception {
+    private void visitDef(Def def, BType bType) {
         Ident ident = def.getIdent();
         LLvmType pointeeType = bType.toLLvmType();
         ArrayList<Integer> lengths = new ArrayList<>();
         for (ConstExp exp : def.getArrayDim()) {
-            lengths.add(((IntConstant) evaluator.eval(exp)).getVal());
+            lengths.add(evaluator.evalConstExp(exp).getVal());
         }
         Collections.reverse(lengths);
         pointeeType = lengths.stream().reduce(pointeeType, ArrayType::new, (type1, type2) -> type2);
@@ -151,11 +151,11 @@ public class Visitor {
             // 数组初始化　と　非数组初始化
             if (def.isArray()) {
                 // 需要eval
-                initialization = visitInitArray((InitArray) def.getInitVal(), (ArrayType) pointeeType, isGlobal);
+                initialization = visitInitArray((InitArray) def.getInitVal(), (ArrayType) pointeeType, isGlobal || def instanceof ConstDef);
             } else {
                 if (isGlobal) {
-                    // 需要eval
-                    Constant constant = evaluator.eval(def.getInitVal());
+                    // 用于不能使用指令，需要提前知道具体的值eval
+                    Constant constant = evaluator.evalConstExp((ConstExp) def.getInitVal());
                     initialization = new VarInitialization((Value) constant);
                 } else {
                     Value value = visitInitVal(def.getInitVal());
@@ -214,8 +214,6 @@ public class Visitor {
                             curBasicBlock.addInstr(storeInstr);
                         }
                     }
-                } else {
-                    throw new RuntimeException("");
                 }
             }
         }
@@ -224,7 +222,7 @@ public class Visitor {
         curSymTable.append(new Symbol(
                 ident,
                 pointeeType,
-                null,
+                def instanceof ConstDef ? initialization : null,
                 pointer
         ));
 
@@ -239,7 +237,7 @@ public class Visitor {
                 initialization = visitInitArray((InitArray) initVal, (ArrayType) elementType, eval);
             } else {
                 if (eval) {
-                    Constant constant = evaluator.eval(initVal);
+                    Constant constant = evaluator.evalConstExp((ConstExp) initVal);
                     initialization = new VarInitialization((Value) constant);
                 } else {
                     Value value = visitInitVal(initVal);
@@ -261,7 +259,7 @@ public class Visitor {
     /**
      * FuncDef ::= FuncType Ident '(' [FuncFParams] ')' Block
      */
-    private void visitFuncDef(FuncDef funcDef) throws Exception {
+    private void visitFuncDef(FuncDef funcDef) {
         Ident ident = funcDef.getIdent();
         // 维护函数表
         if (funcTable.isDuplicated(ident)) {
@@ -288,7 +286,7 @@ public class Visitor {
     /**
      * FuncFParams ::= FuncFParam { ',' FuncFParam } // 1.花括号内重复0次 2.花括号内重复多次
      */
-    private void visitFuncFParams(FuncFParams funcFParams) throws Exception {
+    private void visitFuncFParams(FuncFParams funcFParams) {
         for (FuncFParam funcFParam : funcFParams.getFuncFParams()) {
             visitFuncFParam(funcFParam);
         }
@@ -297,15 +295,14 @@ public class Visitor {
     /**
      * 函数形参 FuncFParam → BType Ident ['[' ']' { '[' ConstExp ']' }]
      */
-    private void visitFuncFParam(FuncFParam funcFParam) throws Exception {
-        int dimNum = funcFParam.getArrayDim().size();
+    private void visitFuncFParam(FuncFParam funcFParam) {
         Ident ident = funcFParam.getIdent();
         // TODO 只需要考虑int情况
         LLvmType paramType;
         if (funcFParam.isArray()) {
             ArrayList<Integer> lengths = new ArrayList<>();
             for (ConstExp index : funcFParam.getArrayDim()) {
-                lengths.add(((IntConstant) evaluator.eval(index)).getVal());
+                lengths.add(evaluator.evalConstExp(index).getVal());
             }
             Collections.reverse(lengths);
             LLvmType pointeeType = funcFParam.getbType().toLLvmType();
@@ -337,7 +334,7 @@ public class Visitor {
     /**
      * 语句块 Block ::= '{' { BlockItem } '}'
      */
-    private void visitBlock(Block block, boolean newSymTable) throws Exception {
+    private void visitBlock(Block block, boolean newSymTable) {
         if (newSymTable) {
             curSymTable = new SymTable(curSymTable);
         }
@@ -352,7 +349,7 @@ public class Visitor {
     /**
      * 语句块项 BlockItem → Decl | Stmt
      */
-    private void visitBlockItem(BlockItem blockItem) throws Exception {
+    private void visitBlockItem(BlockItem blockItem) {
         if (blockItem instanceof Decl) {
             visitDecl((Decl) blockItem);
         } else {
@@ -373,7 +370,7 @@ public class Visitor {
      * LVal '=' 'getint' '(' ')' ';'                            |
      * 'printf' '(' FormatString {',' Exp } ')' ';'                        // 1.有Exp 2.无Exp
      */
-    private void visitStmt(Stmt stmt) throws Exception {
+    private void visitStmt(Stmt stmt) {
         if (stmt instanceof AssignStmt) {
             visitAssignStmt((AssignStmt) stmt);
         } else if (stmt instanceof Block) {
@@ -399,7 +396,7 @@ public class Visitor {
      * <额外语法>
      * 语句 AssignStmt → LVal '=' ( Exp | getint '(' ')' ) ';'
      */
-    private void visitAssignStmt(AssignStmt assignStmt) throws Exception {
+    private void visitAssignStmt(AssignStmt assignStmt) {
         Value left = visitLVal(assignStmt.getlVal(), true);
         Value right = visitExp(assignStmt.getExp());
         StoreInstr storeInstr = new StoreInstr(right, left, curBasicBlock);
@@ -409,7 +406,7 @@ public class Visitor {
     /**
      * <额外语法>
      */
-    private void visitExpStmt(ExpStmt expStmt) throws Exception {
+    private void visitExpStmt(ExpStmt expStmt) {
         if (expStmt.getExp() != null) {
             visitExp(expStmt.getExp());
         }
@@ -419,7 +416,7 @@ public class Visitor {
      * <额外语法>
      * Stmt ::= 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
      */
-    private void visitIfStmt(IfStmt ifStmt) throws Exception {
+    private void visitIfStmt(IfStmt ifStmt) {
         BasicBlock thenBlock, elseBlock, followBlock;
 
         curFunc.addBasicBlock(thenBlock = new BasicBlock(curFunc));
@@ -457,7 +454,7 @@ public class Visitor {
      * 'while' '(' [Cond] ')' Stmt
      * 'for' '(' [ForStmt] ';' [Cond] ';' [ForStmt] ')' Stmt   // 1. 无缺省 2. 缺省第一个ForStmt 3. 缺省Cond 4. 缺省第二个ForStmt
      */
-    private void visitLoopStmt(LoopStmt loopStmt) throws Exception {
+    private void visitLoopStmt(LoopStmt loopStmt) {
         // 循环逻辑：condBlock->(bodyBlock, followBlock)
         BasicBlock condBlock, bodyBlock, continueBlock, followBlock;
         curFunc.addBasicBlock(condBlock = new BasicBlock(curFunc));
@@ -504,17 +501,13 @@ public class Visitor {
      * 条件表达式 Cond → LOrExp
      */
     private Value visitCond(Cond cond, BasicBlock... blocks) throws Exception {
-        visitExp(cond.getFirst());
-        for (Exp exp : cond.getFollows()) {
-            visitExp(exp);
-        }
         return null;
     }
 
     /**
      * 语句 ForStmt → LVal '=' Exp // 存在即可
      */
-    private void visitForStmt(ForStmt forStmt) throws Exception {
+    private void visitForStmt(ForStmt forStmt) {
         visitAssignStmt(forStmt);
     }
 
@@ -546,7 +539,7 @@ public class Visitor {
      * <额外语法>
      * 'return' [Exp] ';'
      */
-    private void visitReturnStmt(ReturnStmt returnStmt) throws Exception {
+    private void visitReturnStmt(ReturnStmt returnStmt) {
         Exp returnExp = returnStmt.getExp();
         Value returnValue = returnExp == null ? null : visitExp(returnExp);
         ReturnInstr returnInstr = new ReturnInstr(returnValue, curBasicBlock);

@@ -18,7 +18,7 @@ public class SymTable {
         this.parentTable = parentTable;
     }
 
-    public void append(Symbol symbol) throws Exception {
+    public void append(Symbol symbol) {
         if (symbolTable.containsKey(symbol.getIdent())) {
             return;
         }
